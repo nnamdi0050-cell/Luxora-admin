@@ -1,0 +1,120 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LUXORA.DEV — Admin Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700;1,900&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Italiana&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyB2Y6WrT2a-d7uYINM5WGVoppENVq65d_I",
+  authDomain: "luxora-dev.firebaseapp.com",
+  projectId: "luxora-dev",
+  storageBucket: "luxora-dev.firebasestorage.app",
+  messagingSenderId: "838821661659",
+  appId: "1:838821661659:web:96cdeed0451fcbc3d6b5fe",
+  measurementId: "G-B42LXGZQEE"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const ADMIN_EMAILS = ["nnamdi0050@gmail.com", "nnamdiooso@gmail.com"];
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0b08;font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.box{background:#F5F1EA;width:100%;max-width:420px;border-radius:24px;padding:28px;text-align:center}
+.logo{font-family:'Italiana',serif;font-size:26px;letter-spacing:3px}
+.logo b{color:#b08d3e;font-family:'Playfair Display',serif;font-style:italic}
+.logo small{display:block;font-size:9px;letter-spacing:3px;color:#999;margin-top:2px}
+h1{font-family:'Playfair Display',serif;font-style:italic;font-size:28px;margin-top:14px}
+p{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;color:#666;margin-top:6px;line-height:1.5}
+label{display:block;margin-top:16px;font-size:11px;font-weight:800;letter-spacing:1px;text-align:left}
+input{width:100%;padding:13px;border:1.5px solid #e8d5b5;border-radius:10px;outline:none;margin-top:6px;font-size:14px;background:#FFFEFB}
+.btn{width:100%;background:linear-gradient(180deg,#d8b45a,#b08d3e);color:#111;border:none;padding:14px;border-radius:10px;font-weight:800;margin-top:18px;cursor:pointer;font-size:14px}
+.btn-dark{width:100%;background:#111;color:#fff;border:none;padding:14px;border-radius:10px;font-weight:800;margin-top:10px;cursor:pointer;font-size:14px}
+.btn-light{width:100%;background:#eee;color:#111;border:none;padding:12px;border-radius:10px;font-weight:700;margin-top:10px;cursor:pointer}
+.err{background:#ffebee;color:#c62828;padding:10px;border-radius:10px;font-size:13px;margin-top:12px;display:none}
+.ok{background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:10px;font-size:13px;margin-top:12px;display:none}
+.small{font-size:12px;color:#888;margin-top:14px;line-height:1.6}
+.small a{color:#111;font-weight:700}
+</style>
+</head>
+<body>
+<div class="box">
+<div class="logo">LUXORA.<b>DEV</b><small>ADMIN ONLY • FULL CONTROL</small></div>
+<h1>Welcome Back, Boss.</h1>
+<p>Only Admin can enter here.<br>Your main website is safe.</p>
+<div class="err" id="errBox"></div>
+<div class="ok" id="okBox"></div>
+<label>ADMIN EMAIL</label>
+<input id="email" type="email" placeholder="nnamdi0050@gmail.com">
+<label>PASSWORD</label>
+<input id="pass" type="password" placeholder="Your admin password">
+<button class="btn" onclick="doLogin()">Enter Admin Dashboard →</button>
+<button class="btn-dark" onclick="doSignup()">Create Admin Account (First Time Only)</button>
+<button class="btn-light" onclick="forgot()">Forgot Password? Send Reset Link</button>
+<p class="small">If you just created your Admin account, use <b>Create Admin Account</b> once.<br>After that, always use <b>Enter Admin Dashboard</b>.<br><br><a href="index.html">← Back to Main Website</a></p>
+</div>
+<script>
+function showErr(m){ let e=document.getElementById('errBox'); e.textContent=m; e.style.display='block'; document.getElementById('okBox').style.display='none'; }
+function showOk(m){ let e=document.getElementById('okBox'); e.textContent=m; e.style.display='block'; document.getElementById('errBox').style.display='none'; }
+let checking=false;
+auth.onAuthStateChanged(async (user)=>{
+  if(!user || checking) return;
+  let email=(user.email||'').toLowerCase();
+  if(!ADMIN_EMAILS.includes(email)){
+    checking=true;
+    showErr('This email is not Admin: '+email+' — logging out...');
+    await auth.signOut();
+    checking=false;
+    return;
+  }
+  try{
+    await db.collection('users').doc(user.uid).set({email:user.email, role:'admin', verifyStatus:'verified', status:'active', lastSeen:Date.now(), updatedAt:Date.now()},{merge:true});
+  }catch(e){}
+  showOk('Welcome back! Opening dashboard...');
+  setTimeout(()=>{ location.replace('admin-dashboard.html'); }, 600);
+});
+async function doLogin(){
+  let email=document.getElementById('email').value.trim().toLowerCase();
+  let pass=document.getElementById('pass').value;
+  if(!email || !pass) return showErr('Enter email and password.');
+  if(!ADMIN_EMAILS.includes(email)) return showErr('This email is NOT Admin. Only boss email can enter.');
+  try{
+    let cred=await auth.signInWithEmailAndPassword(email,pass);
+    await db.collection('users').doc(cred.user.uid).set({email:email, role:'admin', verifyStatus:'verified', status:'active', lastSeen:Date.now(), updatedAt:Date.now()},{merge:true});
+    showOk('Login successful! Opening dashboard...');
+    setTimeout(()=>{ location.replace('admin-dashboard.html'); }, 600);
+  }catch(e){ showErr(e.message); }
+}
+async function doSignup(){
+  let email=document.getElementById('email').value.trim().toLowerCase();
+  let pass=document.getElementById('pass').value;
+  if(!email || !pass) return showErr('Enter email and password to create Admin.');
+  if(!ADMIN_EMAILS.includes(email)) return showErr('Only boss email can create Admin: nnamdi0050@gmail.com');
+  if(pass.length<6) return showErr('Password must be 6+ characters.');
+  try{
+    let cred=await auth.createUserWithEmailAndPassword(email,pass);
+    await db.collection('users').doc(cred.user.uid).set({email:email, name:'Boss Admin', role:'admin', verifyStatus:'verified', status:'active', createdAt:Date.now(), lastSeen:Date.now()});
+    showOk('Admin account created! Opening dashboard...');
+    setTimeout(()=>{ location.replace('admin-dashboard.html'); }, 600);
+  }catch(e){
+    if(e.code==='auth/email-already-in-use'){ showErr('This Admin already exists. Use Enter Admin Dashboard instead.'); }
+    else showErr(e.message);
+  }
+}
+async function forgot(){
+  let email=document.getElementById('email').value.trim().toLowerCase();
+  if(!email) return showErr('Enter your admin email first.');
+  try{ await auth.sendPasswordResetEmail(email); showOk('Reset link sent to '+email+' — check your Gmail.'); }
+  catch(e){ showErr(e.message); }
+}
+</script>
+</body>
+</html>
